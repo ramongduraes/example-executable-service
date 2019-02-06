@@ -128,7 +128,7 @@ A service metadata is a series of JSON-encoded information relative to the servi
 At the root directory of your service, create a service metadata file by running `snet service metadata-init PROTOBUF_DIRECTORY DISPLAY_NAME PAYMENT_ADDRESS`, in which: 
 
 - `PROTOBUF_DIRECTORY` tells SNET CLI where to find the `.proto` file for your service; 
-- `DISPLAY NAME` is your service's display name; 
+- `DISPLAY_NAME` is your service's display name; 
 - `PAYMENT_ADDRESS` is the public key of the blockchain key-pair that will receive the payments from client calls. 
 
 You'll also need to specify: 
