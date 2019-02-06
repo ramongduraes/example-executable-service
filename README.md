@@ -1,10 +1,8 @@
-# Example Process Service
+# Tutorial: Process-type Services
 
-> This tutorial will guide you through the steps required to have a process-type service registered onto the SingularityNET. It assumes you have successfully installed all of SingularityNET components. To do that, refer to TODO: THIS TUTORIAL or simply run a docker container from the Dockerfile provided. If you choose to run a Docker container, make sure to expose a port so that SNET Daemon can communicate with the blockchain.
+> This tutorial will guide you through the steps required to have a process-type service registered onto the SingularityNET. It assumes you have successfully installed all of SingularityNET components. To do that, refer to previous tutorials or simply run a docker container from the [Dockerfile](./Dockerfile) provided. If you choose to run a Docker container, make sure to expose a port so that SNET Daemon can communicate with the blockchain.
 
-## Introduction
-
-SingularityNET is an open-source protocol and collection of smart contracts for a decentralized market of coordinated AI services. Within this framework, anyone can add an AI/machine learning service to SingularityNET for use by the network, and receive network payment tokens in exchange.
+SingularityNET is an open-source protocol and collection of smart contracts for a decentralized market of coordinated AI services. Within this framework, anyone can add an AI/machine learning service to SingularityNET for use by the network and receive network payment tokens in exchange.
 
 As an AI/machine learning service developer, you can expose your service to the SingularityNET by running an instance of SNET Daemon alongside it. The Daemon interacts with the blockchain to facilitate authorization and payment for services and acts as a pass-through for making API calls to the service.  There are currently 3 ways by which the Daemon can communicate with a service:
 
@@ -12,22 +10,20 @@ As an AI/machine learning service developer, you can expose your service to the 
 - Through JSON-RPC;
 - Through gRPC.
 
-This tutorial will guide you through integrating process-type services that receive their input from SNET Daemon via the standard input stream (`stdin`) and return their output via the standard output stream (`stdout`). If you're already familiar with SingularityNET and know how to create, publish and call a service that communicates with SNET Daemon through JSON-RPC or gRPC, you can skip to the [Conclusion](#conclusion) section.
-
-### Tutorial Structure
+This tutorial will guide you through integrating process-type services that receive their input from SNET Daemon via the standard input stream (`stdin`) and return their output via the standard output stream (`stdout`). If you're already familiar with SingularityNET and know how to create, publish and call a service that communicates with SNET Daemon through JSON-RPC or gRPC, you can skip to the [Summary](#summary) section.
 
 The main steps of this tutorial are:
 
-1) [Write the code for your service](#1-writing-the-code-for-your-service) taking and returning well-defined JSON data via stdin and stdout;
-2) [Publish it as an SNET service](#2-publishing-the-service-onto-singularitynet):
-    - Create the service model (protobuf file);
-    - Create the service metadata;
-    - Publish the service under your organization;
-    - Running SNET Daemon;    
-3) [Call the service](#3-calling-your-service).
+1. [Write the code for your service](#step-1-writing-the-code-for-your-service) taking and returning well-defined JSON data via stdin and stdout;
+2. [Publish it as an SNET service](#step-2-publishing-the-service-onto-singularitynet):
+    1. [Specify the service model (protobuf file)](#step-21-specifying-the-service-model)
+    2. [Create the service metadata](#step-22-create-the-service-metadata)
+    3. [Publish the service under your organization](#step-23-publish-the-service-under-your-organization)
+    4. [Running SNET Daemon](#step-24-running-snet-daemon)    
+3. [Call the service](#step-3-calling-your-service).
 
 
-## 1. Writing the code for your service
+## Step 1) Writing the code for your service
 
 For this tutorial we'll write an example executable service in [Python](https://www.python.org/) but this approach can be applied to other programming languages as well.
 
@@ -100,9 +96,9 @@ Notice that:
 - Once your code is ready, avoid printing any debug or status messages since they'll be sent to `stdout`, where SNET Daemon awaits the JSON-encoded return data;
 - Since this code will be interpreted as executable, you need to tell your operating system what interpreter to use by adding the shebang `#!/usr/bin/env python3`, for Python3, or an equivalent for your programming language of choice. You also need to give executable permissions to it, in our case, by running `chmod +x example-executable-service.py`.
 
-## 2. Publishing the service onto SingularityNET
+## Step 2) Publishing the service onto SingularityNET
 
-### Specify the service model
+### Step 2.1) Specifying the service model
 
 After writing the code for your service, you should now specify its user interface: the service model. We do that through a [protobuf](https://developers.google.com/protocol-buffers/docs/overview) file, in which we define `services` (or methods) and their inputs and outputs (`messages`). By default, the `.proto` file is stored inside the `service/service_spec` folder. Below is the protobuf file for our example executable service that defines the `add` method, the `Numbers` message containing the two numbers to added, `a` and `b`, and the `Result` message returning their sum. It is a very simple example of a protobuf file, [learn more](https://developers.google.com/protocol-buffers/docs/proto3) about protobuf syntax for more complex service models.
 
@@ -125,7 +121,7 @@ service Addition {
 
 You should copy this code into an `example-executable-service.proto` file inside `example-executable-service/service/service_spec`. 
 
-### Create the service metadata
+### Step 2.2) Create the service metadata
 
 A service metadata is a series of JSON-encoded information relative to the service that is necessary to publish it. It tells the blockchain where to redirect client calls to (your service endpoints), its encoding, price, etc. (refer to SNET CLI's help for a list of all possible parameters). 
 
@@ -175,7 +171,7 @@ That will generate a `service_metadata.json` file at the root of your service di
 }
 ```
 
-### Publish the service under your organization
+### Step 2.3) Publish the service under your organization
 
 Publish your service by running `snet service publish ORGANIZATION_ID SERVICE_ID`. In our example:
 
@@ -187,7 +183,7 @@ Confirm the transaction and the blockchain should now be aware of your service!
 
 > After having published your service, both its `service_metadata.json` and its service model/specifications (`.proto` file) will have been stored in IPFS, so if you change these files locally, you'll need to update them. Have a look at `snet service update-metadata` and `snet service metadata-set-model` commands for that.
 
-### Running your service
+### Step 2.4) Running SNET Daemon
 
 To run your service, you simply need to run an instance of SNET Daemon at the specified endpoint. It will listen to client calls at the blockchain and execute your service at the specified path using the client parameters. SNET Daemon takes a configuration file that specifies which network it should listen to (e.g. Kovan Testnet), where to redirect calls to, etc. (refer to [SNET Daemon's Github Repository](https://github.com/singnet/snet-daemon) for the complete list of parameters). By default, the daemon configuration file should be created at the root directory of your service and be called `snetd.config.json`. Here's the example configuration file for our service (again, make sure to change the parameters accordingly before saving):
 
@@ -219,7 +215,7 @@ You're now able to keep an instance of SNET Daemon running at your service direc
 snetd serve .
 ```
 
-## 3. Calling your service
+## Step 3) Calling your service
 
 To call your service through the blockchain, make sure you have sufficient funds for the transactions (check by running `snet account balance`). If you don't, deposit an amount (e.g. 10 COGs, or 10e-8 AGI) by running `snet account deposit 0.00000010`. 
  
@@ -241,14 +237,12 @@ It should then return:
 value: 19.5
 ```
 
-That's it!
+That's it! You should now have a working process-type service published onto SingularityNET!
 
-## Conclusion
+## Summary
 
-You should now have a working process-type service published onto SingularityNET!
-
-If you're already familiar with how to publish SingularityNET services, here's the summary of what changes when dealing with process-type services:
+If you're already familiar with how to publish SingularityNET services, here's a summary of what changes when dealing with process-type services:
 
 - Make sure your service code has a shebang line (e.g. `#!/usr/bin/env python3`, executable permissions (change that by running `chmod +x SERVICE_CODE`) and the only data it sends to stdout is the returning message defined at the protobuf file;
-- In `service_metadata.json`: specify `--service-type process --encoding json` when running `snet service metadata-init`;
-- In snetd.config.json: add `"EXECUTABLE_PATH": "PATH_TO_EXECUTABLE"`.
+- Specify `--service-type process` and `--encoding json` when running `snet service metadata-init` or manually change that in `service_metadata.json`;
+- Add `"EXECUTABLE_PATH": "PATH_TO_EXECUTABLE"` in `snetd.config.json`.
